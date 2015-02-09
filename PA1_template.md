@@ -2,11 +2,13 @@
 
 
 ## Loading and preprocessing the data
+
 1. File loaded
 2. Different datasets created from original file to create new data  frames with only the relevant information.
 
 ```r
-activitydata <- read.csv("activity.csv")
+activitydata <- read.csv("activity.csv", stringsAsFactors=FALSE)
+activitydata$date <- as.POSIXlt(activitydata$date, format="%Y-%m-%d")
 library(plyr)
 totalsteps <- ddply(activitydata, .(date), summarize, totsteps = sum(steps, na.rm=TRUE))
 databyinterval <- ddply(activitydata, .(interval), summarize, avgsteps = mean(steps, na.rm=TRUE))
@@ -14,6 +16,7 @@ databyinterval <- ddply(activitydata, .(interval), summarize, avgsteps = mean(st
 
 
 ## What is mean total number of steps taken per day?
+
 1. Total number of steps taken per day already in totalsteps data frame
 2. Histogram of total number of steps taken each day
 
@@ -45,6 +48,7 @@ median(totalsteps$totsteps)
 
 
 ## What is the average daily activity pattern?
+
 1. Time series plot (using databyinterval data frame created above)
 
 ```r
@@ -68,6 +72,7 @@ intervalsorder[1,1]
 
 
 ## Imputing missing values
+
 1. Calculate and report total number of missing values (NAs). True is the number of NAs.
 
 ```r
@@ -80,6 +85,7 @@ table(narows)
 ## FALSE  TRUE 
 ## 50400  2304
 ```
+
 2. Create new dataset equal to original dataset
 3. Replace missing values with average steps for time interval (databyintervals data frame)
 
@@ -89,6 +95,7 @@ library("car")
 newactivity <- activitydata
 newactivity$steps <- recode(newactivity$steps, "NA=databyinterval$avgsteps")
 ```
+
 4. Histogram, mean, and median of total number of steps per day.
 
 ```r
@@ -113,8 +120,30 @@ median(totalsteps2$totsteps)
 ```
 ## [1] 10766.19
 ```
-Observation: Since I used the average number of steps for a time interval, the mean and median did not change.
+
+Observations: The mean and median are slightly higher now that the missing values have beein filled in. 
 
 
 
 ## Are there differences in activity patterns between weekdays and weekends?
+
+1. Create new factor variable with two levels - weekend and weekday
+
+```r
+newactivity$day <- weekdays(newactivity$date)
+newactivity$day = factor(newactivity$day)
+levels(newactivity$day)[c(1,2,5,6,7)] <- "weekday"
+levels(newactivity$day)[c(2,3)] <- "weekend"
+```
+
+2. Panel plot of 5 minute intervals and average number of steps taken, over weekdays and weekends.
+
+```r
+library("lattice")
+newinterval <- ddply(newactivity, .(interval, day), summarize, avgsteps = mean(steps))
+xyplot(avgsteps ~ interval | day, data= newinterval, layout = c(1,2), type="l", ylab="Average number of steps", xlab="5 minute time interval" )
+```
+
+![](PA1_template_files/figure-html/unnamed-chunk-10-1.png) 
+
+Observations: Steps are more evenly distributed throughout the day during weekends.
